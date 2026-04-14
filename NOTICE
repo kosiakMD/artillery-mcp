@@ -1,0 +1,27 @@
+@kosiakmd/artillery-mcp
+=======================
+
+This package is a fork of and substantial rewrite based on:
+  jch1887/artillery-mcp-server  (MIT License)
+  https://github.com/jch1887/artillery-mcp-server
+
+The original MIT License and copyright notice are preserved in the LICENSE
+file. This fork adds:
+
+  - Full `artillery run` flag surface (--record/--key/--tags/--name/--note/
+    -t/-e/--scenario-name/-v/--overrides/-p/--dotenv/-k/--count/-s)
+  - A new `run_fargate` tool wrapping `artillery run-fargate` with the full
+    AWS ECS/Fargate flag set
+  - A new `read_artillery_output` tool that parses raw Artillery stdout dumps
+    (e.g. artillery-output.txt from CI) without requiring a JSON report
+  - Enriched `parse_results` output (returns ALL counters/rates/summaries
+    verbatim, not just http.*)
+  - An optional config-driven `run_project_lt` launcher and `counterBreakdown`
+    grouping, activated only when an `.artillery-mcp.config.json` is present
+  - Fixes for Artillery 2.x compatibility (no `--dry-run` on `run`, no
+    `--report` on `run` — HTML reports now go through a separate
+    `artillery report` invocation)
+  - Expanded unit test suite (146+ tests)
+
+The fork preserves the MIT license. Downstream consumers must retain both
+copyright lines from LICENSE in substantial portions of the software.
