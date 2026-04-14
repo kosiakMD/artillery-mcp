@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kosiakMD/artillery-mcp/main/schemas/config.schema.json",
+  "flows": {
+    "browse": "tests/load/browse.yml",
+    "buy": "tests/load/buy.yml",
+    "combined": "tests/load/combined.yml"
+  },
+  "environments": ["local", "staging", "prod"],
+  "defaultTags": {
+    "repo": "my-app",
+    "owner": "Platform"
+  },
+  "tagTemplates": [
+    "type:{flow}",
+    "env:{env}",
+    "source:mcp"
+  ],
+  "outputDir": "load-test-results",
+  "counterGroups": {
+    "name": "shopBreakdown",
+    "prefix": "shop.",
+    "buckets": [
+      { "key": "steps",   "match": "^shop\\.step\\." },
+      { "key": "cart",    "match": "^shop\\.cart\\." },
+      { "key": "payment", "match": "^shop\\.payment\\." },
+      { "key": "flow",    "match": "^shop\\.flow\\." },
+      { "key": "other",   "default": true }
+    ]
+  }
+}

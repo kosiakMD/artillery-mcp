@@ -1,0 +1,71 @@
+{
+  "name": "@kosiakmd/artillery-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Artillery 2.x — full CLI flag surface (run/run-fargate), counter-rich parse_results, raw-text output parser, and an optional config-driven project launcher.",
+  "main": "dist/server.js",
+  "bin": {
+    "artillery-mcp": "dist/server.js"
+  },
+  "type": "module",
+  "files": [
+    "dist/**/*",
+    "examples/**/*",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx src/server.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "npm run build",
+    "pack": "npm pack",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "debug": "^4.4.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.12",
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "artillery",
+    "load-testing",
+    "fargate",
+    "aws",
+    "model-context-protocol",
+    "performance-testing",
+    "http-testing",
+    "api-testing",
+    "claude",
+    "cursor"
+  ],
+  "author": "Anton Kosiak (https://github.com/kosiakMD)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kosiakMD/artillery-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kosiakMD/artillery-mcp/issues"
+  },
+  "homepage": "https://github.com/kosiakMD/artillery-mcp#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
