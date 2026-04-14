@@ -8,6 +8,7 @@ import path from 'path';
 import { ArtilleryWrapper } from './lib/artillery.js';
 import { ConfigStorage } from './lib/config-storage.js';
 import { loadProjectConfig, LoadedConfig } from './lib/config-loader.js';
+import { registerTool } from './lib/register-tool.js';
 import {
   RunTestFromFileTool,
   RunTestInlineTool,
@@ -160,7 +161,7 @@ function registerTools(
   projectConfig: LoadedConfig
 ) {
   // Register run_test_from_file tool
-  (mcpServer.registerTool as any)('run_test_from_file', {
+  registerTool(mcpServer, 'run_test_from_file', {
     description: 'Run an Artillery test from a config file path (supports --record/--tags/--name/--note/-t/-e/--scenario-name/-v/--overrides/-p/--dotenv/-k/--count/-s).',
     inputSchema: {
       path: z.string().describe('Path to Artillery config file'),
@@ -185,7 +186,7 @@ function registerTools(
       solo: z.boolean().optional().describe('-s / --solo: single VU'),
       extraArgs: z.array(z.string()).optional().describe('Raw extra CLI args (escape hatch)')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new RunTestFromFileTool(artillery);
       const result = await tool.call({ params: { arguments: args } });
@@ -217,7 +218,7 @@ function registerTools(
   });
 
   // Register run_test_inline tool
-  (mcpServer.registerTool as any)('run_test_inline', {
+  registerTool(mcpServer, 'run_test_inline', {
     description: 'Run an Artillery test from inline configuration text.',
     inputSchema: {
       configText: z.string().describe('Artillery configuration as text'),
@@ -227,7 +228,7 @@ function registerTools(
       cwd: z.string().optional().describe('Working directory'),
       validateOnly: z.boolean().optional().describe('Only validate config, do not run')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new RunTestInlineTool(artillery);
       const result = await tool.call({ params: { arguments: args } });
@@ -259,7 +260,7 @@ function registerTools(
   });
 
   // Register quick_test tool
-  (mcpServer.registerTool as any)('quick_test', {
+  registerTool(mcpServer, 'quick_test', {
     description: 'Run a quick HTTP test (if supported by Artillery).',
     inputSchema: {
       target: z.string().describe('URL to test'),
@@ -270,7 +271,7 @@ function registerTools(
       headers: z.record(z.string()).optional().describe('HTTP headers'),
       body: z.string().optional().describe('Request body')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new QuickTestTool(artillery);
       const result = await tool.call({ params: { arguments: args } });
@@ -302,7 +303,7 @@ function registerTools(
   });
 
   // Register list_capabilities tool
-  (mcpServer.registerTool as any)('list_capabilities', {
+  registerTool(mcpServer, 'list_capabilities', {
     description: 'Report versions, detected features, and server limits.',
     inputSchema: {}
   }, async () => {
@@ -337,12 +338,12 @@ function registerTools(
   });
 
   // Register parse_results tool
-  (mcpServer.registerTool as any)('parse_results', {
+  registerTool(mcpServer, 'parse_results', {
     description: 'Parse Artillery JSON results and return summary.',
     inputSchema: {
       jsonPath: z.string().describe('Path to Artillery JSON results file')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new ParseResultsTool(artillery, projectConfig.config);
       const result = await tool.call({ params: { arguments: args } });
@@ -374,7 +375,7 @@ function registerTools(
   });
 
   // Register run_fargate tool
-  (mcpServer.registerTool as any)('run_fargate', {
+  registerTool(mcpServer, 'run_fargate', {
     description: 'Launch an Artillery load test on AWS ECS/Fargate (run-fargate). Requires AWS credentials and an artilleryio cluster in the target region.',
     inputSchema: {
       path: z.string().describe('Path to Artillery config'),
@@ -412,7 +413,7 @@ function registerTools(
       cwd: z.string().optional(),
       extraArgs: z.array(z.string()).optional()
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new RunFargateTool(artillery);
       const result = await tool.call({ params: { arguments: args } });
@@ -439,7 +440,7 @@ function registerTools(
       ? path.dirname(projectConfig.sourcePath)
       : config.workDir;
     serverDebug(`Registering run_project_lt: ${flowNames.length} flows, ${envNames.length} environments`);
-    (mcpServer.registerTool as any)('run_project_lt', {
+    registerTool(mcpServer, 'run_project_lt', {
       description: `Run a pre-configured project LT scenario with opinionated defaults. Flows: ${flowNames.join(', ')}. Environments: ${envNames.join(', ') || '(any)'}. Reads flow→path mapping, default tags, and output dir from .artillery-mcp.config.json.`,
       inputSchema: {
         flow: z.string().describe(`Named flow. One of: ${flowNames.join(', ')}`),
@@ -456,7 +457,7 @@ function registerTools(
         validateOnly: z.boolean().optional(),
         extraArgs: z.array(z.string()).optional()
       }
-    }, async (args: any) => {
+    }, async (args) => {
       try {
         const tool = new RunProjectLtTool(artillery, projectConfig.config, projectRoot);
         const result = await tool.call({ params: { arguments: args } });
@@ -477,7 +478,7 @@ function registerTools(
   }
 
   // Register read_artillery_output tool
-  (mcpServer.registerTool as any)('read_artillery_output', {
+  registerTool(mcpServer, 'read_artillery_output', {
     description:
       'Read an Artillery stdout text dump (e.g. artillery-output.txt from CI) and extract summary block, counters, rates, nested latency metrics — without needing a JSON report. Optionally returns counterBreakdown when a project config with counterGroups is loaded.',
     inputSchema: {
@@ -485,7 +486,7 @@ function registerTools(
       maxBytes: z.number().optional().describe('Truncate rawText from the head if file exceeds this many bytes (default 65536). Counters/metrics are still parsed from the full file.'),
       block: z.enum(['summary', 'full']).optional().describe('Parse metrics from "summary" (last Summary report section) or "full" file. Default: summary.')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new ReadArtilleryOutputTool(projectConfig.config);
       const result = await tool.call({ params: { arguments: args } });
@@ -514,7 +515,7 @@ function registerTools(
   // ==========================================================================
 
   // Register save_config tool
-  (mcpServer.registerTool as any)('save_config', {
+  registerTool(mcpServer, 'save_config', {
     description: 'Save a new Artillery configuration or update an existing one.',
     inputSchema: {
       name: z.string().describe('Unique name for the config'),
@@ -522,7 +523,7 @@ function registerTools(
       description: z.string().optional().describe('Optional description'),
       tags: z.array(z.string()).optional().describe('Optional tags for organization')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new SaveConfigTool(configStorage);
       const result = await tool.call({ params: { arguments: args } });
@@ -554,12 +555,12 @@ function registerTools(
   });
 
   // Register list_configs tool
-  (mcpServer.registerTool as any)('list_configs', {
+  registerTool(mcpServer, 'list_configs', {
     description: 'List all saved Artillery configurations.',
     inputSchema: {
       tag: z.string().optional().describe('Optional tag to filter configs by')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new ListConfigsTool(configStorage);
       const result = await tool.call({ params: { arguments: args } });
@@ -591,12 +592,12 @@ function registerTools(
   });
 
   // Register get_config tool
-  (mcpServer.registerTool as any)('get_config', {
+  registerTool(mcpServer, 'get_config', {
     description: 'Retrieve a saved Artillery configuration by name.',
     inputSchema: {
       name: z.string().describe('Name of the config to retrieve')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new GetConfigTool(configStorage);
       const result = await tool.call({ params: { arguments: args } });
@@ -628,12 +629,12 @@ function registerTools(
   });
 
   // Register delete_config tool
-  (mcpServer.registerTool as any)('delete_config', {
+  registerTool(mcpServer, 'delete_config', {
     description: 'Delete a saved Artillery configuration.',
     inputSchema: {
       name: z.string().describe('Name of the config to delete')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new DeleteConfigTool(configStorage);
       const result = await tool.call({ params: { arguments: args } });
@@ -665,7 +666,7 @@ function registerTools(
   });
 
   // Register run_saved_config tool
-  (mcpServer.registerTool as any)('run_saved_config', {
+  registerTool(mcpServer, 'run_saved_config', {
     description: 'Run an Artillery test using a previously saved configuration.',
     inputSchema: {
       name: z.string().describe('Name of the saved config to run'),
@@ -674,7 +675,7 @@ function registerTools(
       env: z.record(z.string()).optional().describe('Environment variables'),
       validateOnly: z.boolean().optional().describe('Only validate config, do not run')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new RunSavedConfigTool(artillery, configStorage);
       const result = await tool.call({ params: { arguments: args } });
@@ -710,12 +711,12 @@ function registerTools(
   // ==========================================================================
 
   // Register wizard_start tool
-  (mcpServer.registerTool as any)('wizard_start', {
+  registerTool(mcpServer, 'wizard_start', {
     description: 'Start a new interactive wizard for building Artillery test configurations.',
     inputSchema: {
       fromSavedConfig: z.string().optional().describe('Optional saved config name to use as starting point')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new WizardStartTool(configStorage);
       const result = await tool.call({ params: { arguments: args } });
@@ -747,7 +748,7 @@ function registerTools(
   });
 
   // Register wizard_step tool
-  (mcpServer.registerTool as any)('wizard_step', {
+  registerTool(mcpServer, 'wizard_step', {
     description: 'Advance the wizard to the next step based on user input.',
     inputSchema: {
       state: z.object({}).passthrough().describe('The current wizard state'),
@@ -759,7 +760,7 @@ function registerTools(
         z.object({}).passthrough()
       ]).describe('The value for the action')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new WizardStepTool();
       const result = await tool.call({ params: { arguments: args } });
@@ -791,7 +792,7 @@ function registerTools(
   });
 
   // Register wizard_finalize tool
-  (mcpServer.registerTool as any)('wizard_finalize', {
+  registerTool(mcpServer, 'wizard_finalize', {
     description: 'Generate final Artillery config from completed wizard state. Optionally save and/or run it.',
     inputSchema: {
       state: z.object({}).passthrough().describe('The completed wizard state'),
@@ -799,7 +800,7 @@ function registerTools(
       outputJson: z.string().optional().describe('Path for JSON results output'),
       reportHtml: z.string().optional().describe('Path for HTML report output')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new WizardFinalizeTool(artillery, configStorage);
       const result = await tool.call({ params: { arguments: args } });
@@ -835,7 +836,7 @@ function registerTools(
   // ==========================================================================
 
   // Register run_preset_test tool
-  (mcpServer.registerTool as any)('run_preset_test', {
+  registerTool(mcpServer, 'run_preset_test', {
     description: 'Run a preset test type (smoke, baseline, soak, spike) with minimal configuration.',
     inputSchema: {
       target: z.string().describe('Target URL to test'),
@@ -847,7 +848,7 @@ function registerTools(
       reportHtml: z.string().optional().describe('Path for HTML report'),
       env: z.record(z.string()).optional().describe('Environment variables')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new RunPresetTestTool(artillery);
       const result = await tool.call({ params: { arguments: args } });
@@ -879,7 +880,7 @@ function registerTools(
   });
 
   // Register compare_results tool
-  (mcpServer.registerTool as any)('compare_results', {
+  registerTool(mcpServer, 'compare_results', {
     description: 'Compare two Artillery test results to detect performance regressions.',
     inputSchema: {
       baselinePath: z.string().describe('Path to baseline JSON results'),
@@ -890,7 +891,7 @@ function registerTools(
         minThroughputRatio: z.number().optional().describe('Min throughput ratio (default: 0.9 = 90%)')
       }).optional().describe('Custom thresholds')
     }
-  }, async (args: any) => {
+  }, async (args) => {
     try {
       const tool = new CompareResultsTool(artillery);
       const result = await tool.call({ params: { arguments: args } });
