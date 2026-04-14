@@ -70,6 +70,58 @@ claude mcp add artillery-mcp -s user \
 
 Prerequisites: Node.js ≥ 20; Artillery CLI on `PATH` (`npm i -g artillery`).
 
+## Docker
+
+Multi-arch image on GitHub Container Registry — `linux/amd64` and `linux/arm64`, Artillery CLI preinstalled. ~500 MB (Chromium/Playwright browsers skipped — see below).
+
+```bash
+docker pull ghcr.io/kosiakmd/artillery-mcp:latest
+```
+
+**Run** (mount your project as `/workspace`):
+
+```bash
+docker run -i --init --rm \
+  -v "$PWD":/workspace \
+  -e ARTILLERY_CLOUD_API_KEY="$ARTILLERY_CLOUD_API_KEY" \
+  ghcr.io/kosiakmd/artillery-mcp:latest
+```
+
+`--init` ensures the Node process gets reaped on stdin close. Mount `/workspace` read-write if you want `save_config` tools to persist to `/workspace/saved-configs/`; read-only is fine otherwise (the save-config family will simply return errors when called).
+
+**MCP client config** (Claude Desktop / Cursor) — point the MCP at `docker` instead of `npx`:
+
+```json
+{
+  "mcpServers": {
+    "artillery-mcp": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--init", "--rm",
+        "-v", "/absolute/path/to/your/project:/workspace",
+        "-e", "ARTILLERY_CLOUD_API_KEY",
+        "ghcr.io/kosiakmd/artillery-mcp:latest"
+      ],
+      "env": { "ARTILLERY_CLOUD_API_KEY": "a9_..." }
+    }
+  }
+}
+```
+
+**Playwright engine?** If you use `engine: playwright` in your Artillery scripts, extend the base image with Chromium:
+
+```dockerfile
+FROM ghcr.io/kosiakmd/artillery-mcp:latest
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+RUN apk add --no-cache chromium nss freetype harfbuzz ttf-freefont \
+ && npm i -g @playwright/test \
+ && npx playwright install chromium
+```
+
+**Image tags:**
+- `latest` — most recent release
+- `v0.1.1`, `v0.1`, `v0` — pinned by semver (patch / minor / major)
+
 ## Environment variables
 
 | Var | Purpose | Default |
@@ -235,11 +287,12 @@ Without `counterGroups`, the `counterBreakdown` field is simply absent from resp
 ## Roadmap
 
 ### v0.2 (next)
-- [ ] Docker image (multi-arch amd64/arm64; Artillery CLI preinstalled; config via volume mount)
+- [x] ~~Docker image (multi-arch amd64/arm64; Artillery CLI preinstalled; config via volume mount)~~ — shipped in v0.1.1
 - [ ] Artillery Cloud API integration — `list_recent_runs`, `get_run_details(runUrl)`, `compare_to_baseline(runUrl)`
 - [ ] `run_report` tool — standalone wrapper around `artillery report` (JSON → HTML)
 - [ ] Config schema validation with helpful error messages (zod) on startup
 - [ ] YAML config support (`.artillery-mcp.config.yml`)
+- [ ] Playwright-engine Docker variant (`ghcr.io/kosiakmd/artillery-mcp:latest-playwright`) with Chromium preinstalled
 
 ### v0.3+
 - [ ] Artillery Lambda (`run-lambda`) and Azure ACI (`run-aci`) tools — parity with `run-fargate`

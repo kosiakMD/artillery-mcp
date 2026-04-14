@@ -69,10 +69,18 @@ async function main() {
     // Create Artillery wrapper
     const artillery = new ArtilleryWrapper(config);
 
-    // Create and initialize config storage
+    // Create and initialize config storage. Non-fatal if the workDir is
+    // read-only (e.g. Docker volume mounted :ro, sandboxed CI workspace) —
+    // save_config / list_configs / get_config / delete_config / run_saved_config
+    // will surface the underlying error when called, but the other 13 tools
+    // keep working.
     const configStorage = new ConfigStorage(config.workDir);
-    await configStorage.initialize();
-    serverDebug('Config storage initialized at:', config.workDir + '/saved-configs');
+    try {
+      await configStorage.initialize();
+      serverDebug('Config storage initialized at:', config.workDir + '/saved-configs');
+    } catch (e) {
+      errorsDebug('Config storage init failed (save_config family disabled):', e);
+    }
 
     // Register tools
     registerTools(mcpServer, artillery, configStorage, config, projectConfig);
