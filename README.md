@@ -93,9 +93,13 @@ Prerequisites: Node.js ≥ 20; Artillery CLI on `PATH` (`npm i -g artillery`).
 
 ## Docker
 
-Multi-arch image on GitHub Container Registry — `linux/amd64` and `linux/arm64`, Artillery CLI preinstalled. ~500 MB (Chromium/Playwright browsers skipped — see below).
+Multi-arch image — `linux/amd64` and `linux/arm64`, Artillery CLI preinstalled. ~500 MB (Chromium/Playwright browsers skipped — see below). Published to **both** Docker Hub and GitHub Container Registry from the same build; identical digests.
 
 ```bash
+# Docker Hub (discoverable via `docker search artillery-mcp`)
+docker pull kosiakmd/artillery-mcp:latest
+
+# GitHub Container Registry
 docker pull ghcr.io/kosiakmd/artillery-mcp:latest
 ```
 
@@ -105,7 +109,7 @@ docker pull ghcr.io/kosiakmd/artillery-mcp:latest
 docker run -i --init --rm \
   -v "$PWD":/workspace \
   -e ARTILLERY_CLOUD_API_KEY="$ARTILLERY_CLOUD_API_KEY" \
-  ghcr.io/kosiakmd/artillery-mcp:latest
+  kosiakmd/artillery-mcp:latest
 ```
 
 `--init` ensures the Node process gets reaped on stdin close. Mount `/workspace` read-write if you want `save_config` tools to persist to `/workspace/saved-configs/`; read-only is fine otherwise (the save-config family will simply return errors when called).
@@ -121,7 +125,7 @@ docker run -i --init --rm \
         "run", "-i", "--init", "--rm",
         "-v", "/absolute/path/to/your/project:/workspace",
         "-e", "ARTILLERY_CLOUD_API_KEY",
-        "ghcr.io/kosiakmd/artillery-mcp:latest"
+        "kosiakmd/artillery-mcp:latest"
       ],
       "env": { "ARTILLERY_CLOUD_API_KEY": "a9_..." }
     }
@@ -132,7 +136,7 @@ docker run -i --init --rm \
 **Playwright engine?** If you use `engine: playwright` in your Artillery scripts, extend the base image with Chromium:
 
 ```dockerfile
-FROM ghcr.io/kosiakmd/artillery-mcp:latest
+FROM kosiakmd/artillery-mcp:latest
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
 RUN apk add --no-cache chromium nss freetype harfbuzz ttf-freefont \
  && npm i -g @playwright/test \
@@ -313,7 +317,7 @@ Without `counterGroups`, the `counterBreakdown` field is simply absent from resp
 - [ ] `run_report` tool — standalone wrapper around `artillery report` (JSON → HTML)
 - [ ] Config schema validation with helpful error messages (zod) on startup
 - [ ] YAML config support (`.artillery-mcp.config.yml`)
-- [ ] Playwright-engine Docker variant (`ghcr.io/kosiakmd/artillery-mcp:latest-playwright`) with Chromium preinstalled
+- [ ] Playwright-engine Docker variant (`kosiakmd/artillery-mcp:latest-playwright`) with Chromium preinstalled
 
 ### v0.3+
 - [ ] Artillery Lambda (`run-lambda`) and Azure ACI (`run-aci`) tools — parity with `run-fargate`
