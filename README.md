@@ -23,10 +23,16 @@ a MIT-licensed fork with broader coverage. See [Credits](#credits).
 | `parse_results` counters | `http.*` only | ALL counters + rates + nested summaries |
 | Parse raw stdout (`artillery-output.txt`) | ❌ | ✅ `read_artillery_output` tool |
 | HTML report generation | passes invalid `--report` flag | ✅ separate `artillery report` call |
+| Standalone JSON → HTML (`run_report`) | ❌ | ✅ |
 | `--dry-run` validation | broken (flag doesn't exist in 2.x) | ✅ client-side YAML structural check |
 | Opt-in project launcher | ❌ | ✅ `run_project_lt` (when config present) |
 | Opt-in counter grouping | ❌ | ✅ `counterBreakdown` (when config present) |
-| Tests | 122 | 146 |
+| `init` scaffolder | ❌ | ✅ `npx @kosiakmd/artillery-mcp init` |
+| Shipped `SKILL.md` template | ❌ | ✅ agent-oriented guidance |
+| Docker image | ❌ | ✅ multi-arch (Docker Hub + GHCR) |
+| MCP Registry listing | ❌ | ✅ `io.github.kosiakMD/artillery-mcp` |
+| `serverVersion` accuracy | hardcoded | ✅ read from package.json at runtime |
+| Tests | 122 | 163 |
 
 ## Quickstart for agents (Claude Code / Cursor)
 
@@ -160,20 +166,30 @@ RUN apk add --no-cache chromium nss freetype harfbuzz ttf-freefont \
 | `ARTILLERY_MCP_CONFIG` | Absolute path to project config (opt-in) | — |
 | `DEBUG` | `artillery:mcp:*` for verbose logs | — |
 
-## 16 base tools (no config needed)
+## 18 base tools (no config needed)
 
+**Run tests**
 - **`run_test_from_file`** — full-flag `artillery run` wrapper (see flag surface above).
 - **`run_test_inline`** — same but takes YAML text, writes to a tmp file.
 - **`quick_test`** — `artillery quick <url>` with rate/count/duration/method/headers/body.
 - **`run_fargate`** — `artillery run-fargate` with `--region`, `--cluster`, `--cpu`, `--memory`, `--launch-type`, `--spot`, `--subnet-ids`, `--security-group-ids`, `--task-role-name`, `--task-ephemeral-storage`, `--container-dns-servers`, `--max-duration`, `--packages`, `--secret`, `--no-assign-public-ip` + all run-shared flags.
-- **`list_capabilities`** — versions of Artillery/Node/this server, configured paths, limits.
+- **`run_preset_test`** — smoke / baseline / soak / spike presets against a URL.
+- **`run_saved_config`** — re-run a saved config by name.
+
+**Parse + inspect results**
 - **`parse_results`** — reads an Artillery JSON report; returns `summary` + `allCounters` + `allRates` + `allSummaries` + scenarios + metadata.
 - **`read_artillery_output`** — reads a raw Artillery stdout dump (e.g. `artillery-output.txt` saved from CI), returns `rawText` (with tail-truncation), `summaryBlock`, `counters`, `rates`, `metrics` (nested percentiles).
-- **`save_config` / `list_configs` / `get_config` / `delete_config`** — persistent named Artillery configs.
-- **`run_saved_config`** — re-run a saved config by name.
-- **`wizard_start` / `wizard_step` / `wizard_finalize`** — interactive test builder.
-- **`run_preset_test`** — smoke / baseline / soak / spike presets against a URL.
+- **`run_report`** — converts an existing JSON results file to HTML via `artillery report`. Use when you have JSON from CI artifacts and want shareable HTML without re-running.
 - **`compare_results`** — diff two Artillery JSON results for regression detection.
+
+**Saved configs**
+- **`save_config` / `list_configs` / `get_config` / `delete_config`** — persistent named Artillery configs.
+
+**Interactive builder**
+- **`wizard_start` / `wizard_step` / `wizard_finalize`** — interactive test builder.
+
+**Meta**
+- **`list_capabilities`** — versions of Artillery/Node/this server, configured paths, limits.
 
 ## Optional feature #1 — Project launcher (`run_project_lt`)
 
@@ -311,27 +327,38 @@ Without `counterGroups`, the `counterBreakdown` field is simply absent from resp
 
 ## Roadmap
 
+### Shipped
+- [x] **v0.1.1** — Docker image (multi-arch amd64/arm64; Artillery CLI preinstalled)
+- [x] **v0.1.2** — `artillery-mcp init` scaffolder + shipped `SKILL.md` agent-guidance template
+- [x] **v0.1.3** — hard-fail on unknown CLI args, fix Dockerfile missing `skills/`
+- [x] **v0.1.4** — dual-publish to Docker Hub alongside GHCR (for `docker search` discoverability)
+- [x] **v0.1.7** — `run_report` tool (JSON → HTML via `artillery report`); listed in MCP Official Registry (`io.github.kosiakMD/artillery-mcp`)
+
 ### v0.2 (next)
-- [x] ~~Docker image (multi-arch amd64/arm64; Artillery CLI preinstalled; config via volume mount)~~ — shipped in v0.1.1
-- [ ] Artillery Cloud API integration — `list_recent_runs`, `get_run_details(runUrl)`, `compare_to_baseline(runUrl)`
-- [ ] `run_report` tool — standalone wrapper around `artillery report` (JSON → HTML)
-- [ ] Config schema validation with helpful error messages (zod) on startup
-- [ ] YAML config support (`.artillery-mcp.config.yml`)
-- [ ] Playwright-engine Docker variant (`kosiakmd/artillery-mcp:latest-playwright`) with Chromium preinstalled
+- [ ] **Artillery Cloud API integration** — `list_recent_runs`, `get_run_details(runUrl)`, `compare_to_baseline(runUrl)`. Requires reverse-engineering the `artilleryio` REST API or partnering with Artillery.io.
+- [ ] **Config schema validation on startup** — parse `.artillery-mcp.config.json` through zod with human-readable error messages ("expected 'flows' to be object, got null at line 3"). Fail-fast with pointer to README.
+- [ ] **YAML config support** — accept `.artillery-mcp.config.yml` using a tiny bundled YAML parser (keeping deps light).
+- [ ] **Playwright Docker variant** — `kosiakmd/artillery-mcp:latest-playwright` with Chromium preinstalled for users with `engine: playwright` scripts. Separate tag to keep base image small.
 
 ### v0.3+
-- [ ] Artillery Lambda (`run-lambda`) and Azure ACI (`run-aci`) tools — parity with `run-fargate`
-- [ ] `run_project_lt` matrix mode — iterate over `{ flow × env }` combinations in one call
-- [ ] Per-flow config overrides (different counter-group rules / tag sets / env overrides)
-- [ ] Streaming intermediate metrics via MCP progress events during long runs
-- [ ] Built-in presets library (smoke/baseline/soak/spike) selectable via config
-- [ ] Published JSON Schema at a stable URL for IDE autocompletion of config files
-- [ ] Plugin API for custom counter-group matchers (beyond regex)
+- [ ] **Artillery Lambda + Azure ACI tools** — `run_lambda`, `run_aci` for parity with `run_fargate`.
+- [ ] **`run_project_lt` matrix mode** — `{"matrix": {"flow": ["free","paid"], "env": ["staging","prod"]}}` → 4 runs in parallel.
+- [ ] **Per-flow config overrides** — different `counterGroups` / `defaultTags` / `environments` per flow instead of global.
+- [ ] **Streaming intermediate metrics** via MCP progress events so agents see RPS/errors mid-run instead of only at completion.
+- [ ] **Built-in presets library** — smoke / baseline / soak / spike selectable via config (not just inline YAML).
+- [ ] **Published JSON Schema** at stable URL for IDE autocompletion of `.artillery-mcp.config.json`.
+- [ ] **Plugin API for counter-group matchers** beyond regex — e.g. JSONPath, Wasm filter, callback to a user-provided JS.
+- [ ] **Structured `run_report` variant** — return extracted summary text alongside the HTML path, so AI agents can skip loading the file.
+- [ ] **Smithery support** — add StreamableHTTP transport + hosted deployment once there's enough demand (requires OAuth-style session config for per-user API keys).
 
 ### Under consideration
-- [ ] Integration with Grafana/Prometheus for live metrics dashboards
-- [ ] Native support for Artillery Pro / enterprise features
-- [ ] TUI dashboard for long-running tests when invoked outside MCP
+- [ ] **Grafana / Prometheus integration** — push metrics to a user-provided Prometheus endpoint instead of (or in addition to) Artillery Cloud.
+- [ ] **Native Artillery Pro support** — enterprise features if users request them.
+- [ ] **TUI dashboard** for long-running tests when invoked outside MCP (standalone mode).
+- [ ] **Community MCP catalogs** — manual registration on [mcp-get.com](https://mcp-get.com), [PulseMCP](https://www.pulsemcp.com/) for extra discoverability.
+- [ ] **Upstream contribution** — offer `read_artillery_output`, `run_fargate`, and `full flag surface` patches back to [`@jch1887/artillery-mcp-server`](https://github.com/jch1887/artillery-mcp-server) as PRs; if merged, this fork becomes a thin config-plugin layer on top.
+
+Issues / feature requests / PRs welcome: [github.com/kosiakMD/artillery-mcp/issues](https://github.com/kosiakMD/artillery-mcp/issues).
 
 Issues and feature requests welcome: [github.com/kosiakMD/artillery-mcp/issues](https://github.com/kosiakMD/artillery-mcp/issues).
 
