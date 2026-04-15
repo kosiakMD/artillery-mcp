@@ -28,6 +28,27 @@ a MIT-licensed fork with broader coverage. See [Credits](#credits).
 | Opt-in counter grouping | ❌ | ✅ `counterBreakdown` (when config present) |
 | Tests | 122 | 146 |
 
+## Quickstart for agents (Claude Code / Cursor)
+
+```bash
+# In your project root
+npx @kosiakmd/artillery-mcp init
+```
+
+Scaffolds two files (skipped if they already exist, use `--force` to overwrite):
+
+- `.artillery-mcp.config.json` — starter template with commented fields
+- `.ai/skills/artillery-mcp/SKILL.md` — agent-oriented guidance (when to call which tool, common patterns, gotchas)
+
+After editing the config with your real flows/paths, register the MCP in your agent and restart the session:
+
+```bash
+claude mcp add artillery-mcp -s user \
+  -e ARTILLERY_WORKDIR="$PWD" \
+  -e ARTILLERY_CLOUD_API_KEY=a9_... \
+  -- npx -y @kosiakmd/artillery-mcp
+```
+
 ## Install / Quickstart (zero-config)
 
 Runs out of the box — no config file needed. Works as an MCP server over stdio

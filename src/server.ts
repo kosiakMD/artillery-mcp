@@ -38,6 +38,15 @@ const SERVER_VERSION = '1.0.4';
 const serverDebug = debug('artillery:mcp:server');
 const errorsDebug = debug('artillery:mcp:errors');
 
+// CLI subcommand router. With no args → start MCP server (stdio).
+// With "init" → delegate to the scaffolder.
+const cliArg = process.argv[2];
+if (cliArg === 'init' || cliArg === '--help' || cliArg === '-h') {
+  const { runCli } = await import('./init.js');
+  await runCli();
+  process.exit(0);
+}
+
 async function main() {
   try {
     serverDebug('Starting Artillery MCP Server...');
