@@ -10,6 +10,7 @@ export { RunProjectLtTool } from './run-project-lt.js';
 export { ListCapabilitiesTool } from './list-capabilities.js';
 export { ParseResultsTool } from './parse-results.js';
 export { ReadArtilleryOutputTool } from './read-artillery-output.js';
+export { RunReportTool } from './run-report.js';
 
 // Saved config management tools
 export { SaveConfigTool } from './save-config.js';

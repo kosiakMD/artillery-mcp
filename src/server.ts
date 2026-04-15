@@ -5,6 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import debug from 'debug';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 import { ArtilleryWrapper } from './lib/artillery.js';
 import { ConfigStorage } from './lib/config-storage.js';
 import { loadProjectConfig, LoadedConfig } from './lib/config-loader.js';
@@ -17,6 +18,7 @@ import {
   ListCapabilitiesTool,
   ParseResultsTool,
   ReadArtilleryOutputTool,
+  RunReportTool,
   RunFargateTool,
   RunProjectLtTool,
   SaveConfigTool,
@@ -33,7 +35,18 @@ import { ServerConfig } from './types.js';
 import { z } from 'zod';
 
 
-const SERVER_VERSION = '1.0.4';
+// Read real version from package.json at runtime rather than hardcoding.
+// Compiled dist/server.js lives in dist/, sibling to package.json one level up.
+async function readPackageVersion(): Promise<string> {
+  try {
+    const pkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
+    const raw = await fs.readFile(pkgPath, 'utf-8');
+    return JSON.parse(raw).version ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+const SERVER_VERSION = await readPackageVersion();
 
 const serverDebug = debug('artillery:mcp:server');
 const errorsDebug = debug('artillery:mcp:errors');
@@ -537,6 +550,32 @@ function registerTools(
             })
           }
         ]
+      };
+    }
+  });
+
+  // Register run_report tool
+  registerTool(mcpServer, 'run_report', {
+    description: 'Convert an existing Artillery JSON results file to an HTML report via `artillery report`. Use when you have JSON (e.g. CI artifact) and want shareable HTML without re-running the test.',
+    inputSchema: {
+      jsonPath: z.string().describe('Absolute path to Artillery JSON results file'),
+      outputHtml: z.string().optional().describe('Absolute path for generated HTML. Defaults to <jsonPath>.html')
+    }
+  }, async (args: any) => {
+    try {
+      const tool = new RunReportTool(artillery);
+      const result = await tool.call({ params: { arguments: args } });
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+    } catch (error) {
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            status: 'error',
+            tool: 'run_report',
+            error: { code: 'INTERNAL_ERROR', message: error instanceof Error ? error.message : 'Unknown error occurred' }
+          })
+        }]
       };
     }
   });

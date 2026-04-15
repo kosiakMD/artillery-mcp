@@ -4,6 +4,11 @@
 
 FROM node:22-alpine AS base
 
+# MCP Registry (registry.modelcontextprotocol.io) requires this label on the
+# OCI image to prove namespace ownership. Value must match the reverse-DNS
+# server name declared in server.json.
+LABEL io.modelcontextprotocol.server.name="io.github.kosiakMD/artillery-mcp"
+
 # artillery = the load-test CLI the MCP server spawns.
 # PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD avoids pulling ~1 GB of Chromium for users
 # who only run HTTP tests. If you need the Playwright engine, extend this image:

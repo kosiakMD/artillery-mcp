@@ -52,6 +52,23 @@ export class ArtilleryWrapper {
   }
 
   /**
+   * Convert an existing JSON results file to HTML via `artillery report`.
+   * Complements the inline reportHtml option on runTestFromFile — used when
+   * you have a JSON from a previous/CI run and want the HTML locally.
+   */
+  async runReport(jsonPath: string, outputHtml: string): Promise<void> {
+    const result = await this.runCommand(
+      ['report', '--output', outputHtml, jsonPath],
+      { cwd: this.config.workDir, env: process.env, timeout: 60000 }
+    );
+    if (result.exitCode !== 0) {
+      throw new Error(
+        `artillery report exited with code ${result.exitCode}. stderr: ${(result.stderr || '').slice(-500)}`
+      );
+    }
+  }
+
+  /**
    * Run Artillery test from file.
    *
    * Supports the full `artillery run` flag surface:
