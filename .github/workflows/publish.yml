@@ -53,13 +53,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Extract tags + labels
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/artillery-mcp
-          # ghcr.io expects lowercase — github.repository_owner is already lowercase on GitHub side
-          # but we keep the explicit repo path for clarity.
+          images: |
+            ghcr.io/${{ github.repository_owner }}/artillery-mcp
+            ${{ secrets.DOCKERHUB_USERNAME }}/artillery-mcp
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
