@@ -20,9 +20,10 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --prefer-offline --no-audit --no-fund \
  && npm cache clean --force
 
-# Ship the compiled JS + examples + metadata (mirrors npm package files)
+# Ship the compiled JS + examples + agent skill + metadata (mirrors npm package files)
 COPY dist/ ./dist/
 COPY examples/ ./examples/
+COPY skills/ ./skills/
 COPY README.md LICENSE NOTICE ./
 
 # Users mount their project (with .artillery-mcp.config.json at root) here.

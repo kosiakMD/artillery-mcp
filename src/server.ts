@@ -39,12 +39,24 @@ const serverDebug = debug('artillery:mcp:server');
 const errorsDebug = debug('artillery:mcp:errors');
 
 // CLI subcommand router. With no args → start MCP server (stdio).
-// With "init" → delegate to the scaffolder.
+// With a known subcommand/flag → delegate to the scaffolder CLI.
+// With anything else (unknown arg) → print help, exit 1. Otherwise an
+// `npx artillery-mcp doctor`-style typo silently starts the MCP server and
+// hangs waiting for stdin — confusing UX.
 const cliArg = process.argv[2];
-if (cliArg === 'init' || cliArg === '--help' || cliArg === '-h') {
+const KNOWN_CLI_ARGS = new Set(['init', '--help', '-h']);
+if (cliArg !== undefined) {
+  if (KNOWN_CLI_ARGS.has(cliArg)) {
+    const { runCli } = await import('./init.js');
+    await runCli();
+    process.exit(0);
+  }
+  console.error(`Unknown argument: ${cliArg}\n`);
   const { runCli } = await import('./init.js');
+  // runCli() with no args prints the help text and returns normally.
+  process.argv.splice(2, process.argv.length - 2);
   await runCli();
-  process.exit(0);
+  process.exit(1);
 }
 
 async function main() {
